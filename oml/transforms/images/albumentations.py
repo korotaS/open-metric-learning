@@ -144,9 +144,9 @@ def get_augs_hypvit_albu(
     im_size: int = 224, min_scale: float = 0.2, mean: TNormParam = MEAN, std: TNormParam = STD
 ) -> albu.Compose:
     augs = albu.Compose([
-        albu.RandomResizedCrop(im_size, scale=(min_scale, 1.0), interpolation=cv2.INTER_CUBIC),
-        albu.Normalize(mean=mean, std=std),
+        albu.RandomResizedCrop(im_size, im_size, scale=(min_scale, 1.0), interpolation=cv2.INTER_CUBIC),
         albu.HorizontalFlip(),
+        albu.Normalize(mean=mean, std=std),
         ToTensorV2()
     ])
     return augs

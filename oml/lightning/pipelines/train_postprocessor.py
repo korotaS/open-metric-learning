@@ -77,7 +77,10 @@ def get_loaders_with_embeddings(
         "use_fp16": int(cfg.get("precision", 32)) == 16,
     }
 
-    if cfg["embeddings_cache_dir"] is not None:
+    if 'embeddings_cache_train' in cfg and 'embeddings_cache_val' in cfg:
+        emb_train = torch.load(cfg['embeddings_cache_train'], map_location='cpu')  # bug!
+        emb_val = torch.load(cfg['embeddings_cache_val'], map_location='cpu')  # bug!
+    elif cfg["embeddings_cache_dir"] is not None:
         hash_ = get_hash_of_extraction_stage_cfg(cfg)[:5]
         dir_ = Path(cfg["embeddings_cache_dir"])
         emb_train = inference_cached(dataset=train_extraction, cache_path=str(dir_ / f"emb_train_{hash_}.pkl"), **args)
@@ -100,6 +103,7 @@ def get_loaders_with_embeddings(
         df=val_extraction.df,
         transform=transforms_extraction,
         extra_data={EMBEDDINGS_KEY: emb_val},
+        load_images=False
     )
 
     sampler = parse_sampler_from_config(cfg, dataset=train_dataset)
@@ -126,7 +130,6 @@ def postprocessor_training_pipeline(cfg: DictConfig) -> None:
     set_global_seed(cfg["seed"])
 
     cfg = dictconfig_to_dict(cfg)
-    pprint(cfg)
 
     logger = parse_logger_from_config(cfg)
     logger.log_pipeline_info(cfg)
@@ -178,6 +181,7 @@ def postprocessor_training_pipeline(cfg: DictConfig) -> None:
         precision=cfg.get("precision", 32),
         logger=logger,
         callbacks=[metrics_clb, parse_ckpt_callback_from_config(cfg)],
+        log_every_n_steps=25,
         **trainer_engine_params,
     )
 

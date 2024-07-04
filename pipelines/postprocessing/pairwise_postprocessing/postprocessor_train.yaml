@@ -3,24 +3,25 @@ postfix: "postprocessing"
 seed: 42
 precision: 16
 accelerator: gpu
-devices: 2
+devices: 1
 find_unused_parameters: False
 
-dataset_root: /path/to/dataset/   # <---- specify path to your dataset
-logs_root: /path/to/logs   # <---- specify path to your logs
+dataset_root: /home/korotas/data/repro/inshop/
+logs_root: /home/korotas/projects/repro/logs/
 dataframe_name: df.csv
 logs_folder: ${now:%Y-%m-%d_%H-%M-%S}_${postfix}
 
-num_workers: 20
+num_workers: 0
 cache_size: 0
 max_epochs: 1000
 valid_period: 10
 
 # CACHE EMBEDDINGS PRODUCED BY BASELINE FEATURE EXTRACTOR
 
-embeddings_cache_dir: ${dataset_root}
+embeddings_cache_train: /home/korotas/data/repro/inshop/emb_train.pt
+embeddings_cache_val: /home/korotas/data/repro/inshop/emb_val.pt
 
-extractor_weights: /path/to/extractor.ckpt  # <---- specify path to baseline feature extractor
+extractor_weights: /home/korotas/data/repro/inshop/extractor_inshop.ckpt
 
 extractor:
   name: vit
@@ -31,7 +32,7 @@ extractor:
     arch: vits16
 
 transforms_extraction:
-  name: norm_resize_hypvit_torch
+  name: norm_resize_hypvit_albu
   args:
     im_size: 224
     crop_size: 224
@@ -71,11 +72,11 @@ scheduling:
 sampler:
   name: balance
   args:
-    n_labels: 30
+    n_labels: 13
     n_instances: 4
 
 transforms_train:
-  name: augs_hypvit_torch
+  name: augs_hypvit_albu
   args:
     im_size: 224
     min_scale: 0.8
@@ -100,17 +101,20 @@ mode_for_checkpointing: max
 log_images: False
 metric_args:
   metrics_to_exclude_from_visualization: [cmc,]
-  cmc_top_k: [1, 10, 20, 30, 100]
-  map_top_k: [5, 10]
+  cmc_top_k: [1, 5]
+  map_top_k: []
   fmr_vals: []
   pcf_variance: []
+  precision_top_k: []
   return_only_overall_category: True
   visualize_only_overall_category: True
 
 logger:
-  name: wandb  # requires <WANDB_API_KEY> as global env
+  name: clearml
   args:
-    project: "test_project"
+    project_name: "OML Repro/inshop"
+    task_name: "reproduction"
+    offline_mode: False
 
 tags:
   - postprocessing
