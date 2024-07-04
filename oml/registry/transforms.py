@@ -9,6 +9,8 @@ from oml.transforms.images.albumentations import (
     get_normalisation_albu,
     get_normalisation_resize_albu,
     get_normalisation_resize_albu_clip,
+    get_augs_hypvit_albu,
+    get_normalisation_resize_hypvit_albu
 )
 from oml.transforms.images.torchvision import (
     get_augs_hypvit,
@@ -26,6 +28,8 @@ TRANSFORMS_ALBU = {
     "norm_albu": get_normalisation_albu,
     "norm_resize_albu": get_normalisation_resize_albu,
     "norm_resize_albu_clip": get_normalisation_resize_albu_clip,
+    "augs_hypvit_albu": get_augs_hypvit_albu,
+    "norm_resize_hypvit_albu": get_normalisation_resize_hypvit_albu
 }
 
 TRANSFORMS_TORCH = {

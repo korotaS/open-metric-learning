@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Tuple
 import torch
 from torch import FloatTensor, Tensor, nn
 from torch.utils.data import DataLoader
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from oml.datasets import PairDataset
 from oml.ddp.patching import patch_dataloader_to_ddp

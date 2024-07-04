@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import torch
 from torch import Tensor, nn
-from torch.nn.modules.activation import Sigmoid
+from torch.nn.modules.activation import Sigmoid, ReLU
 from torchvision.ops import MLP
 
 from oml.interfaces.models import IExtractor, IFreezable, IPairwiseModel
@@ -70,6 +70,8 @@ class ConcatSiamese(IPairwiseModel, IFreezable):
         mlp_hidden_dims: List[int],
         use_tta: bool = False,
         weights: Optional[Union[str, Path]] = None,
+        device: Union[str, torch.device] = "cpu",
+        middle_activation: str = 'sigmoid'
     ) -> None:
         """
         Args:
@@ -80,20 +82,27 @@ class ConcatSiamese(IPairwiseModel, IFreezable):
             weights: Path to weights file or ``None`` for random initialization
 
         """
-        super(ConcatSiamese, self).__init__()
+        super().__init__()
         self.extractor = extractor
         self.use_tta = use_tta
+
+        if middle_activation == 'sigmoid':
+            activation = Sigmoid
+        elif middle_activation == 'relu':
+            activation = ReLU
+        else:
+            raise NotImplementedError()
 
         self.head = MLP(
             in_channels=self.extractor.feat_dim,
             hidden_channels=[*mlp_hidden_dims, 1],
-            activation_layer=Sigmoid,
+            activation_layer=activation,
             dropout=0.5,
             inplace=None,
-        )
+        ).to(device)
 
         # turn off the last bias
-        self.head[-2] = nn.Linear(self.head[-2].in_features, self.head[-2].out_features, bias=False)
+        self.head[-2] = nn.Linear(self.head[-2].in_features, self.head[-2].out_features, bias=False).to(device)
 
         # turn off the last dropout
         self.head[-1] = nn.Identity()

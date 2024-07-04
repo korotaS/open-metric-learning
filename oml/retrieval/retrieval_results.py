@@ -199,6 +199,7 @@ class RetrievalResults:
             sequence_ids_gallery=sequence_ids_gallery,
             top_n=n_items,
             verbose=verbose,
+            bs=4
         )
 
         return RetrievalResults(distances=distances, retrieved_ids=retrieved_ids, gt_ids=gt_ids)

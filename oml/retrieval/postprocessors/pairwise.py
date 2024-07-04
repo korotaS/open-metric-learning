@@ -120,12 +120,14 @@ class PairwiseReranker(IRetrievalPostprocessor):
         query_ids = dataset.get_query_ids()
         gallery_ids = dataset.get_gallery_ids()
         for iq, ids_gallery in enumerate(retrieved_ids):
-            ids_gallery_global = gallery_ids[ids_gallery][: self.top_n].tolist()
+            ids_gallery_global = gallery_ids[ids_gallery.cpu()][: self.top_n].tolist()
             ids_query_global = [query_ids[iq].item()] * len(ids_gallery_global)
 
             pairs.extend(list(zip(ids_query_global, ids_gallery_global)))
             bounds.append(bounds[-1] + len(ids_gallery_global))
 
+        old_load_images = dataset.load_images
+        dataset.load_images = True
         distances_recomputed = pairwise_inference(
             model=self.model,
             base_dataset=dataset,
@@ -135,6 +137,7 @@ class PairwiseReranker(IRetrievalPostprocessor):
             verbose=self.verbose,
             use_fp16=self.use_fp16,
         )
+        dataset.load_images = old_load_images
 
         # Reshape flat dists into the original structure of sequences (having different sizes) relevant to each query
         distances_upd, retrieved_ids_upd = [], []

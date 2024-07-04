@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 from torch import BoolTensor, FloatTensor, LongTensor, Tensor, isin
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from oml.const import OVERALL_CATEGORIES_KEY
 from oml.utils.misc import check_if_nonempty_positive_integers
@@ -47,7 +47,7 @@ def calc_retrieval_metrics(
     assert (query_categories is None) or (len(query_categories) == len(retrieved_ids))
 
     # let's mark every correctly retrieved item as True and vice versa
-    gt_tops = tuple([isin(r, g).bool() for r, g in zip(retrieved_ids, gt_ids)])
+    gt_tops = tuple([isin(r, g.to(r.device)).bool() for r, g in zip(retrieved_ids, gt_ids)])
     n_gts = [len(ids) for ids in gt_ids]
 
     metrics: TMetricsDict = defaultdict(dict)

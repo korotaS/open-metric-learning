@@ -140,6 +140,30 @@ def get_normalisation_resize_albu_clip(im_size: int) -> albu.Compose:
     return get_normalisation_resize_albu(im_size=im_size, mean=MEAN_CLIP, std=STD_CLIP)
 
 
+def get_augs_hypvit_albu(
+    im_size: int = 224, min_scale: float = 0.2, mean: TNormParam = MEAN, std: TNormParam = STD
+) -> albu.Compose:
+    augs = albu.Compose([
+        albu.RandomResizedCrop(im_size, scale=(min_scale, 1.0), interpolation=cv2.INTER_CUBIC),
+        albu.Normalize(mean=mean, std=std),
+        albu.HorizontalFlip(),
+        ToTensorV2()
+    ])
+    return augs
+
+
+def get_normalisation_resize_hypvit_albu(
+    im_size: int = 224, crop_size: int = 224, mean: TNormParam = MEAN, std: TNormParam = STD
+) -> albu.Compose:
+    transforms = albu.Compose([
+        albu.Resize(im_size, im_size, interpolation=cv2.INTER_CUBIC),
+        albu.CenterCrop(crop_size, crop_size),
+        albu.Normalize(mean=mean, std=std),
+        ToTensorV2()
+    ])
+    return transforms
+
+
 __all__ = [
     "get_augs_albu",
     "get_normalisation_albu",
@@ -150,5 +174,7 @@ __all__ = [
     "get_colors_level",
     "get_noise_channels",
     "get_noises",
+    "get_augs_hypvit_albu",
+    "get_normalisation_resize_hypvit_albu",
     "RandomSizedBBoxSafeCropPatched",
 ]

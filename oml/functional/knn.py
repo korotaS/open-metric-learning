@@ -2,7 +2,7 @@ from typing import Optional, Sequence, Tuple
 
 import torch
 from torch import BoolTensor, FloatTensor, LongTensor, Tensor
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from oml.const import BS_KNN
 from oml.utils.misc_torch import pairwise_dist
@@ -68,7 +68,7 @@ def batched_knn_qg(
 
         if (ids_query is not None) and (ids_gallery is not None):
             # we want to ignore the item during search if it was used for both: query and gallery
-            mask_to_ignore_same_item = ids_query[i : i + bs][..., None] == ids_gallery[None, ...]
+            mask_to_ignore_same_item = (ids_query[i : i + bs][..., None] == ids_gallery[None, ...]).to(distances_b.device)
             mask_to_ignore_b = torch.logical_or(mask_to_ignore_b, mask_to_ignore_same_item)
 
         if (sequence_ids_query is not None) and (sequence_ids_gallery is not None):

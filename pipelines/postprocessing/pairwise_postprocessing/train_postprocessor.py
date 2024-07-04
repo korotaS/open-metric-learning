@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/home/korotas/projects/open-metric-learning/')
+
 import hydra
 from omegaconf import DictConfig
 

@@ -76,6 +76,7 @@ class ImageBaseDataset(IBaseDataset, IVisualizableDataset):
         cache_size: Optional[int] = 0,
         input_tensors_key: str = INPUT_TENSORS_KEY,
         index_key: str = INDEX_KEY,
+        load_images: bool = True,
     ):
         """
 
@@ -111,6 +112,7 @@ class ImageBaseDataset(IBaseDataset, IVisualizableDataset):
         self._bboxes = bboxes
         self._transform = transform if transform else get_transforms("norm_albu")
         self._f_imread = f_imread or get_im_reader_for_transforms(self._transform)
+        self.load_images = load_images
 
         if cache_size:
             self.read_bytes = lru_cache(maxsize=cache_size)(self._read_bytes)  # type: ignore
@@ -126,28 +128,33 @@ class ImageBaseDataset(IBaseDataset, IVisualizableDataset):
             return fin.read()
 
     def __getitem__(self, item: int) -> Dict[str, Union[FloatTensor, int]]:
-        img_bytes = self.read_bytes(self._paths[item])
-        img = self._f_imread(img_bytes)
+        if self.load_images:
+            img_bytes = self.read_bytes(self._paths[item])
+            img = self._f_imread(img_bytes)
 
-        im_h, im_w = img.shape[:2] if isinstance(img, np.ndarray) else img.size[::-1]
+            im_h, im_w = img.shape[:2] if isinstance(img, np.ndarray) else img.size[::-1]
 
-        if (self._bboxes is not None) and (self._bboxes[item] is not None):
-            x1, y1, x2, y2 = self._bboxes[item]
+            if (self._bboxes is not None) and (self._bboxes[item] is not None):
+                x1, y1, x2, y2 = self._bboxes[item]
+            else:
+                x1, y1, x2, y2 = 0, 0, im_w, im_h
+
+            if isinstance(self._transform, albu.Compose):
+                img = img[y1:y2, x1:x2, :]
+                image_tensor = self._transform(image=img)["image"]
+            else:
+                # torchvision.transforms
+                img = img.crop((x1, y1, x2, y2))
+                image_tensor = self._transform(img)
+
+            data = {
+                self.input_tensors_key: image_tensor,
+                self.index_key: item,
+            }
         else:
-            x1, y1, x2, y2 = 0, 0, im_w, im_h
-
-        if isinstance(self._transform, albu.Compose):
-            img = img[y1:y2, x1:x2, :]
-            image_tensor = self._transform(image=img)["image"]
-        else:
-            # torchvision.transforms
-            img = img.crop((x1, y1, x2, y2))
-            image_tensor = self._transform(img)
-
-        data = {
-            self.input_tensors_key: image_tensor,
-            self.index_key: item,
-        }
+            data = {
+                self.index_key: item,
+            }
 
         for key, record in self.extra_data.items():
             if key in data:
@@ -187,6 +194,7 @@ class ImageLabeledDataset(DFLabeledDataset, IVisualizableDataset):
         input_tensors_key: str = INPUT_TENSORS_KEY,
         labels_key: str = LABELS_KEY,
         index_key: str = INDEX_KEY,
+        load_images: bool = True,
     ):
         dataset = ImageBaseDataset(
             paths=df[PATHS_COLUMN].tolist(),
@@ -198,6 +206,7 @@ class ImageLabeledDataset(DFLabeledDataset, IVisualizableDataset):
             cache_size=cache_size,
             input_tensors_key=input_tensors_key,
             index_key=index_key,
+            load_images=load_images
         )
         super().__init__(dataset=dataset, df=df, extra_data=extra_data, labels_key=labels_key)
 
@@ -231,6 +240,7 @@ class ImageQueryGalleryLabeledDataset(DFQueryGalleryLabeledDataset, IVisualizabl
         cache_size: Optional[int] = 0,
         input_tensors_key: str = INPUT_TENSORS_KEY,
         labels_key: str = LABELS_KEY,
+        load_images: bool = True,
     ):
         dataset = ImageBaseDataset(
             paths=df[PATHS_COLUMN].tolist(),
@@ -241,6 +251,7 @@ class ImageQueryGalleryLabeledDataset(DFQueryGalleryLabeledDataset, IVisualizabl
             f_imread=f_imread,
             cache_size=cache_size,
             input_tensors_key=input_tensors_key,
+            load_images=load_images
         )
 
         super().__init__(dataset=dataset, df=df, extra_data=extra_data, labels_key=labels_key)

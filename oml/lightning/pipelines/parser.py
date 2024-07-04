@@ -100,7 +100,8 @@ def parse_ckpt_callback_from_config(cfg: TCfg) -> ModelCheckpoint:
         mode=cfg.get("mode_for_checkpointing", "max"),
         save_top_k=1,
         verbose=True,
-        filename="best",
+        auto_insert_metric_name=False,
+        filename='epoch={epoch}-cmc1={OVERALL/cmc/1:.4f}'
     )
 
 
